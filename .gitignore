@@ -2,5 +2,11 @@ __pycache__/
 *.py[cod]
 *.pp[ma]
 *.png
+.class
+java/out/
+java/target/
+java/build/
+*.jar
+*.war
 .DS_Store
 .venv/

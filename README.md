@@ -29,6 +29,25 @@ Notes:
 - The output is a PNG image that most image tools can open.
 - Everything is pure Python; no external dependencies are required.
 
+### Java version
+
+A Java implementation lives in `java/src/main/java`. Build and run with the default algorithm:
+
+```bash
+javac -d java/out $(find java/src/main/java -name "*.java")
+java -cp java/out maze.Main \
+  --width 1000 --height 1000 \
+  --min-room-width 2 --min-room-height 2 \
+  --max-room-width 200 --max-room-height 200 \
+  --coverage 50 \
+  --hallway-width 1 \
+  --algorithm rooms_and_corridors \
+  --output maze.png \
+  [--seed 1234]
+```
+
+Flags mirror the Python CLI. The output is the same PNG color scheme (light gray empty, medium gray rooms, very dark hallways).
+
 ## Default algorithm: rooms_and_corridors
 The bundled algorithm follows a simple rooms-and-corridors approach to ensure all rooms connect:
 - **Room placement:** randomly sample room sizes within min/max bounds and place them at random positions as long as they do not overlap existing rooms. Stop when the coverage target is reached or attempts are exhausted.
