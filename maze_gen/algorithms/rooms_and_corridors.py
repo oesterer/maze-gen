@@ -15,6 +15,7 @@ class RoomsAndCorridorsGenerator:
         if config.seed is not None:
             self.random.seed(config.seed)
 
+        # Start with an empty grid; 0 = empty, 1 = room, 2 = hallway.
         grid: List[List[int]] = [[EMPTY for _ in range(config.width)] for _ in range(config.height)]
         rooms: List[Room] = []
         filled = 0
@@ -67,6 +68,7 @@ class RoomsAndCorridorsGenerator:
             return filled
 
         # Prim's algorithm for a loose spanning tree over room centers.
+        # Build a loose spanning tree over room centers (Prim-like greedy) so every room connects.
         connected = {0}
         remaining = set(range(1, len(rooms)))
         edges: List[Tuple[int, int]] = []
@@ -128,6 +130,7 @@ class RoomsAndCorridorsGenerator:
         ex, ey = end
 
         # Choose an L-shaped path: horizontal then vertical, or the reverse.
+        # Carve an L shape; flip a coin for horizontal-first vs vertical-first.
         carve_h_first = self.random.choice([True, False])
         filled = 0
 

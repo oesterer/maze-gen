@@ -17,6 +17,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
             random.setSeed(config.seed);
         }
 
+        // 2D tile grid: EMPTY, ROOM, HALLWAY.
         Tile[][] grid = new Tile[config.height][config.width];
         for (int y = 0; y < config.height; y++) {
             for (int x = 0; x < config.width; x++) {
@@ -54,6 +55,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     private int connectRooms(MazeConfig config, Tile[][] grid, List<Room> rooms, int filled) {
         if (rooms.size() < 2) return filled;
 
+        // Build a spanning tree over room centers so every room connects (Prim-like greedy nearest).
         Set<Integer> connected = new HashSet<>();
         connected.add(0);
         Set<Integer> remaining = new HashSet<>();
@@ -94,6 +96,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     private int carveCorridor(Tile[][] grid, int[] start, int[] end, int width) {
         int sx = start[0], sy = start[1];
         int ex = end[0], ey = end[1];
+        // Carve an L-shape corridor; randomly decide orientation.
         boolean horizontalFirst = random.nextBoolean();
         int filled = 0;
 
