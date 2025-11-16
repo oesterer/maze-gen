@@ -13,6 +13,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
 
     @Override
     public MazeResult generate(MazeConfig config) {
+        // Overall flow: seed RNG, place rooms, connect, then prune dead ends.
         if (config.seed != null) {
             random.setSeed(config.seed);
         }
@@ -35,6 +36,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int placeRooms(MazeConfig config, Tile[][] grid, List<Room> rooms, int target) {
+        // Randomly place non-overlapping rooms until target coverage or attempt limit.
         int filled = 0;
         int attempts = 0;
         int maxAttempts = 10_000;
@@ -53,6 +55,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int connectRooms(MazeConfig config, Tile[][] grid, List<Room> rooms, int filled) {
+        // Build a spanning tree over room centers and carve corridors between linked rooms.
         if (rooms.size() < 2) return filled;
 
         // Build a spanning tree over room centers so every room connects (Prim-like greedy nearest).
@@ -94,6 +97,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int carveCorridor(Tile[][] grid, int[] start, int[] end, int width) {
+        // Carve an L-shaped corridor between two connection points.
         int sx = start[0], sy = start[1];
         int ex = end[0], ey = end[1];
         // Carve an L-shape corridor; randomly decide orientation.
@@ -111,6 +115,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int fillLine(Tile[][] grid, int x0, int y0, int x1, int y1, int width) {
+        // Fill a straight line segment of hallway tiles, respecting width and rooms.
         int filled = 0;
         int gw = grid[0].length;
         int gh = grid.length;
@@ -148,6 +153,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int fillRect(Tile[][] grid, int x, int y, int w, int h, Tile value) {
+        // Fill a rectangle with a given tile value and count new fill.
         int filled = 0;
         for (int yy = y; yy < y + h; yy++) {
             for (int xx = x; xx < x + w; xx++) {
@@ -159,6 +165,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private boolean canPlace(Tile[][] grid, int x, int y, int w, int h) {
+        // Check if the proposed room footprint is empty.
         for (int yy = y; yy < y + h; yy++) {
             for (int xx = x; xx < x + w; xx++) {
                 if (grid[yy][xx] != Tile.EMPTY) return false;
@@ -168,19 +175,23 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int[] center(Room room) {
+        // Center coordinate of a room.
         return new int[]{room.centerX(), room.centerY()};
     }
 
     private int manhattan(int[] a, int[] b) {
+        // Manhattan distance between two points.
         return Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]);
     }
 
     private int randInRange(int min, int max) {
+        // Random inclusive value in [min, max].
         if (max < min) return min;
         return min + random.nextInt(max - min + 1);
     }
 
     private Iterable<Integer> rangeInclusive(int start, int end) {
+        // Inclusive integer range iterated via list.
         List<Integer> values = new ArrayList<>();
         int step = end >= start ? 1 : -1;
         for (int v = start; v != end + step; v += step) {
@@ -190,6 +201,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int[] connectionPoint(Room room, Room target, int gridW, int gridH) {
+        // Pick a point just outside the closest side of the room to the target center.
         int tx = target.centerX();
         int ty = target.centerY();
         int x0 = room.x;
@@ -224,12 +236,14 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int clamp(int v, int min, int max) {
+        // Clamp value to [min, max].
         if (v < min) return min;
         if (v > max) return max;
         return v;
     }
 
     private int pruneDeadEnds(Tile[][] grid, List<Room> rooms) {
+        // Remove hallway dead ends not adjacent to rooms; return updated filled count.
         int h = grid.length;
         if (h == 0) return 0;
         int w = grid[0].length;
@@ -286,6 +300,7 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int neighCount(Tile[][] grid, int x, int y) {
+        // Count hallway neighbors in 4-neighborhood.
         int count = 0;
         int[][] dirs = {{1,0},{-1,0},{0,1},{0,-1}};
         for (int[] d : dirs) {

@@ -12,6 +12,7 @@ class RoomsAndCorridorsGenerator:
         self.random = random.Random()
 
     def generate(self, config: MazeConfig) -> Tuple[List[List[int]], List[Room]]:
+        # Orchestrate generation: place rooms, connect them, prune dead ends.
         if config.seed is not None:
             self.random.seed(config.seed)
 
@@ -34,6 +35,7 @@ class RoomsAndCorridorsGenerator:
         rooms: List[Room],
         target: int,
     ) -> int:
+        # Randomly drop non-overlapping rooms until target coverage or attempts exhausted.
         filled = 0
         attempts = 0
         max_attempts = 10_000
@@ -64,6 +66,7 @@ class RoomsAndCorridorsGenerator:
         rooms: List[Room],
         filled: int,
     ) -> int:
+        # Connect room centers with a greedy spanning tree, then carve corridors.
         if len(rooms) < 2:
             return filled
 
@@ -102,6 +105,7 @@ class RoomsAndCorridorsGenerator:
         return filled
 
     def _can_place_room(self, grid: List[List[int]], x: int, y: int, width: int, height: int) -> bool:
+        # Verify the rectangle is empty.
         for yy in range(y, y + height):
             row = grid[yy]
             for xx in range(x, x + width):
@@ -110,6 +114,7 @@ class RoomsAndCorridorsGenerator:
         return True
 
     def _fill_rect(self, grid: List[List[int]], x: int, y: int, width: int, height: int, value: int) -> int:
+        # Fill a rectangle with the given tile value.
         filled = 0
         for yy in range(y, y + height):
             row = grid[yy]
@@ -126,6 +131,7 @@ class RoomsAndCorridorsGenerator:
         end: Tuple[int, int],
         width: int,
     ) -> int:
+        # Carve an L-shaped hallway between two connection points.
         sx, sy = start
         ex, ey = end
 
@@ -147,6 +153,7 @@ class RoomsAndCorridorsGenerator:
         return filled
 
     def _fill_line(self, grid: List[List[int]], x0: int, y0: int, x1: int, y1: int, width: int) -> int:
+        # Fill a line segment with hallway tiles, respecting width and rooms.
         filled = 0
         if x0 == x1:
             x_start = x0 - width // 2
@@ -179,6 +186,7 @@ class RoomsAndCorridorsGenerator:
         return filled
 
     def _connection_point(self, room: Room, target: Tuple[int, int], grid_width: int, grid_height: int) -> Tuple[int, int]:
+        # Pick a point just outside the closest side of a room to the target.
         tx, ty = target
         x0, y0 = room.x, room.y
         x1, y1 = room.x + room.width - 1, room.y + room.height - 1
@@ -211,6 +219,7 @@ class RoomsAndCorridorsGenerator:
         return (cx, cy)
 
     def _range_inclusive(self, start: int, end: int):
+        # Inclusive integer range that handles both directions.
         step = 1 if end >= start else -1
         return range(start, end + step, step)
 
@@ -220,6 +229,7 @@ class RoomsAndCorridorsGenerator:
         return abs(ax - bx) + abs(ay - by)
 
     def _prune_dead_ends(self, grid: List[List[int]], rooms: List[Room]) -> int:
+        # Remove hallway dead ends not adjacent to rooms, then recount filled tiles.
         height = len(grid)
         if height == 0:
             return 0
