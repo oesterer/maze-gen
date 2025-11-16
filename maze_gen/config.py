@@ -15,7 +15,7 @@ class MazeConfig:
     coverage: float = 0.5  # fraction of area (0-1)
     hallway_width: int = 1
     algorithm: str = "rooms_and_corridors"
-    output_path: str = "maze.ppm"
+    output_path: str = "maze.png"
     seed: Optional[int] = None
 
     @property

@@ -21,7 +21,8 @@ class RoomsAndCorridorsGenerator:
         target_filled = int(config.area * config.coverage)
 
         filled = self._place_rooms(config, grid, rooms, target_filled)
-        filled = self._connect_rooms(config, grid, rooms, filled, target_filled)
+        filled = self._connect_rooms(config, grid, rooms, filled)
+        filled = self._prune_dead_ends(grid, rooms)
 
         return grid, rooms
 
@@ -61,7 +62,6 @@ class RoomsAndCorridorsGenerator:
         grid: List[List[int]],
         rooms: List[Room],
         filled: int,
-        target: int,
     ) -> int:
         if len(rooms) < 2:
             return filled
@@ -88,15 +88,14 @@ class RoomsAndCorridorsGenerator:
             edges.append((i, j))
 
         for a, b in edges:
+            start = self._connection_point(rooms[a], rooms[b].center, len(grid[0]), len(grid))
+            end = self._connection_point(rooms[b], rooms[a].center, len(grid[0]), len(grid))
             filled += self._carve_corridor(
                 grid,
-                rooms[a].center,
-                rooms[b].center,
+                start,
+                end,
                 config.hallway_width,
-                target - filled,
             )
-            if filled >= target:
-                break
 
         return filled
 
@@ -124,7 +123,6 @@ class RoomsAndCorridorsGenerator:
         start: Tuple[int, int],
         end: Tuple[int, int],
         width: int,
-        remaining_budget: int,
     ) -> int:
         sx, sy = start
         ex, ey = end
@@ -138,13 +136,9 @@ class RoomsAndCorridorsGenerator:
 
         if carve_h_first:
             filled += carve_line(sx, sy, ex, sy)
-            if filled >= remaining_budget:
-                return filled
             filled += carve_line(ex, sy, ex, ey)
         else:
             filled += carve_line(sx, sy, sx, ey)
-            if filled >= remaining_budget:
-                return filled
             filled += carve_line(sx, ey, ex, ey)
 
         return filled
@@ -157,7 +151,10 @@ class RoomsAndCorridorsGenerator:
             for yy in self._range_inclusive(y0, y1):
                 for xx in range(x_start, x_end):
                     if 0 <= yy < len(grid) and 0 <= xx < len(grid[0]):
-                        if grid[yy][xx] == EMPTY:
+                        cell = grid[yy][xx]
+                        if cell == ROOM:
+                            continue  # do not overwrite rooms
+                        if cell == EMPTY:
                             filled += 1
                         grid[yy][xx] = HALLWAY
         elif y0 == y1:
@@ -166,7 +163,10 @@ class RoomsAndCorridorsGenerator:
             for yy in range(y_start, y_end):
                 for xx in self._range_inclusive(x0, x1):
                     if 0 <= yy < len(grid) and 0 <= xx < len(grid[0]):
-                        if grid[yy][xx] == EMPTY:
+                        cell = grid[yy][xx]
+                        if cell == ROOM:
+                            continue  # do not overwrite rooms
+                        if cell == EMPTY:
                             filled += 1
                         grid[yy][xx] = HALLWAY
         else:
@@ -174,6 +174,38 @@ class RoomsAndCorridorsGenerator:
             filled += self._fill_line(grid, x0, y0, x1, y0, width)
             filled += self._fill_line(grid, x1, y0, x1, y1, width)
         return filled
+
+    def _connection_point(self, room: Room, target: Tuple[int, int], grid_width: int, grid_height: int) -> Tuple[int, int]:
+        tx, ty = target
+        x0, y0 = room.x, room.y
+        x1, y1 = room.x + room.width - 1, room.y + room.height - 1
+
+        # Nearest point on room perimeter to target.
+        cx = min(max(tx, x0), x1)
+        cy = min(max(ty, y0), y1)
+
+        # Decide which side to exit based on closest edge.
+        distances = {
+            "left": abs(tx - x0),
+            "right": abs(tx - x1),
+            "top": abs(ty - y0),
+            "bottom": abs(ty - y1),
+        }
+        side = min(distances, key=distances.get)
+
+        if side == "left":
+            cx = x0 - 1
+        elif side == "right":
+            cx = x1 + 1
+        elif side == "top":
+            cy = y0 - 1
+        else:  # bottom
+            cy = y1 + 1
+
+        # Clamp to grid boundaries.
+        cx = max(0, min(grid_width - 1, cx))
+        cy = max(0, min(grid_height - 1, cy))
+        return (cx, cy)
 
     def _range_inclusive(self, start: int, end: int):
         step = 1 if end >= start else -1
@@ -183,3 +215,58 @@ class RoomsAndCorridorsGenerator:
         ax, ay = a
         bx, by = b
         return abs(ax - bx) + abs(ay - by)
+
+    def _prune_dead_ends(self, grid: List[List[int]], rooms: List[Room]) -> int:
+        height = len(grid)
+        if height == 0:
+            return 0
+        width = len(grid[0])
+
+        # Precompute room adjacency for quick lookups.
+        room_adjacent = [[False for _ in range(width)] for _ in range(height)]
+        for room in rooms:
+            for yy in range(room.y, room.y + room.height):
+                for xx in range(room.x, room.x + room.width):
+                    for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                        nx, ny = xx + dx, yy + dy
+                        if 0 <= nx < width and 0 <= ny < height:
+                            room_adjacent[ny][nx] = True
+
+        def hallway_neighbors(x: int, y: int) -> int:
+            count = 0
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < width and 0 <= ny < height and grid[ny][nx] == HALLWAY:
+                    count += 1
+            return count
+
+        queue: list[Tuple[int, int]] = []
+        for y in range(height):
+            for x in range(width):
+                if grid[y][x] == HALLWAY and hallway_neighbors(x, y) <= 1 and not room_adjacent[y][x]:
+                    queue.append((x, y))
+
+        removed = 0
+        while queue:
+            x, y = queue.pop()
+            if grid[y][x] != HALLWAY:
+                continue
+            if room_adjacent[y][x]:
+                continue
+            if hallway_neighbors(x, y) > 1:
+                continue
+            grid[y][x] = EMPTY
+            removed += 1
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < width and 0 <= ny < height:
+                    if grid[ny][nx] == HALLWAY and hallway_neighbors(nx, ny) <= 1 and not room_adjacent[ny][nx]:
+                        queue.append((nx, ny))
+
+        # Return updated filled count (rooms + hallways after pruning).
+        filled = 0
+        for row in grid:
+            for cell in row:
+                if cell != EMPTY:
+                    filled += 1
+        return filled

@@ -1,1 +1,6 @@
-resume
+__pycache__/
+*.py[cod]
+*.pp[ma]
+*.png
+.DS_Store
+.venv/

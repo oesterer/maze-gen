@@ -6,7 +6,7 @@ from typing import Type
 from . import __version__
 from .algorithms import ALGORITHMS, MazeGenerator
 from .config import MazeConfig
-from .renderer import render_ppm
+from .renderer import render_png
 from .stats import count_coverage
 
 
@@ -31,7 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="rooms_and_corridors",
         help="Maze generation algorithm",
     )
-    parser.add_argument("--output", default="maze.ppm", help="Output image path (PPM format)")
+    parser.add_argument("--output", default="maze.png", help="Output image path (PNG format)")
     parser.add_argument("--seed", type=int, default=None, help="Optional random seed for reproducible mazes")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser
@@ -52,7 +52,7 @@ def main(argv: list[str] | None = None) -> None:
     generator = load_generator(config.algorithm)
 
     grid, rooms = generator.generate(config)
-    render_ppm(grid, config.output_path)
+    render_png(grid, config.output_path)
 
     filled_cells, coverage = count_coverage(grid)
     print(
