@@ -29,13 +29,13 @@ Notes:
 - The output is a PNG image that most image tools can open.
 - Everything is pure Python; no external dependencies are required.
 
-### Java version
+### Java version (Maven)
 
-A Java implementation lives in `java/src/main/java`. Build and run with the default algorithm:
+A Java implementation lives in `java/src/main/java`. Build, test, and run with Maven:
 
 ```bash
-javac -d java/out $(find java/src/main/java -name "*.java")
-java -cp java/out maze.Main \
+mvn -f java/pom.xml clean package
+mvn -f java/pom.xml exec:java -Dexec.args="\
   --width 1000 --height 1000 \
   --min-room-width 2 --min-room-height 2 \
   --max-room-width 200 --max-room-height 200 \
@@ -43,7 +43,7 @@ java -cp java/out maze.Main \
   --hallway-width 1 \
   --algorithm rooms_and_corridors \
   --output maze.png \
-  [--seed 1234]
+  [--seed 1234]" 
 ```
 
 Flags mirror the Python CLI. The output is the same PNG color scheme (light gray empty, medium gray rooms, very dark hallways).
