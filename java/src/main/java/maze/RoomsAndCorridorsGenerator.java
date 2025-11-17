@@ -243,30 +243,15 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
     }
 
     private int pruneDeadEnds(Tile[][] grid, List<Room> rooms) {
-        // Remove hallway dead ends not adjacent to rooms; return updated filled count.
+        // Remove all hallway dead ends (tiles with <=1 hallway neighbor), cascading until stable.
         int h = grid.length;
         if (h == 0) return 0;
         int w = grid[0].length;
 
-        boolean[][] roomAdjacent = new boolean[h][w];
-        for (Room room : rooms) {
-            for (int y = room.y; y < room.y + room.height; y++) {
-                for (int x = room.x; x < room.x + room.width; x++) {
-                    for (int[] d : new int[][]{{1,0},{-1,0},{0,1},{0,-1}}) {
-                        int nx = x + d[0];
-                        int ny = y + d[1];
-                        if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-                            roomAdjacent[ny][nx] = true;
-                        }
-                    }
-                }
-            }
-        }
-
         Deque<int[]> queue = new ArrayDeque<>();
         for (int y = 0; y < h; y++) {
             for (int x = 0; x < w; x++) {
-                if (grid[y][x] == Tile.HALLWAY && neighCount(grid, x, y) <= 1 && !roomAdjacent[y][x]) {
+                if (grid[y][x] == Tile.HALLWAY && neighCount(grid, x, y) <= 1) {
                     queue.add(new int[]{x, y});
                 }
             }
@@ -276,14 +261,13 @@ public final class RoomsAndCorridorsGenerator implements MazeGenerator {
             int[] pos = queue.removeLast();
             int x = pos[0], y = pos[1];
             if (grid[y][x] != Tile.HALLWAY) continue;
-            if (roomAdjacent[y][x]) continue;
             if (neighCount(grid, x, y) > 1) continue;
             grid[y][x] = Tile.EMPTY;
             for (int[] d : new int[][]{{1,0},{-1,0},{0,1},{0,-1}}) {
                 int nx = x + d[0];
                 int ny = y + d[1];
                 if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-                    if (grid[ny][nx] == Tile.HALLWAY && neighCount(grid, nx, ny) <= 1 && !roomAdjacent[ny][nx]) {
+                    if (grid[ny][nx] == Tile.HALLWAY && neighCount(grid, nx, ny) <= 1) {
                         queue.add(new int[]{nx, ny});
                     }
                 }
