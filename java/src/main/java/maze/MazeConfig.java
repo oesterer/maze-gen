@@ -13,6 +13,7 @@ public final class MazeConfig {
     public final int hallwayWidth;
     public final String algorithm;
     public final String outputPath;
+    public final String graphOutputPath;
     public final Long seed;
 
     public MazeConfig(
@@ -26,6 +27,7 @@ public final class MazeConfig {
             int hallwayWidth,
             String algorithm,
             String outputPath,
+            String graphOutputPath,
             Long seed) {
         this.width = width;
         this.height = height;
@@ -37,6 +39,7 @@ public final class MazeConfig {
         this.hallwayWidth = hallwayWidth;
         this.algorithm = Objects.requireNonNull(algorithm, "algorithm");
         this.outputPath = Objects.requireNonNull(outputPath, "outputPath");
+        this.graphOutputPath = graphOutputPath;
         this.seed = seed;
     }
 
@@ -55,6 +58,7 @@ public final class MazeConfig {
         int hallwayWidth = 1;
         String algorithm = "rooms_and_corridors";
         String output = "maze.png";
+        String graphOutput = null;
         Long seed = null;
 
         for (int i = 0; i < args.length; i++) {
@@ -70,6 +74,7 @@ public final class MazeConfig {
                 case "--hallway-width" -> hallwayWidth = Integer.parseInt(requireNext(args, ++i, arg));
                 case "--algorithm" -> algorithm = requireNext(args, ++i, arg);
                 case "--output" -> output = requireNext(args, ++i, arg);
+                case "--graph-output" -> graphOutput = requireNext(args, ++i, arg);
                 case "--seed" -> seed = Long.parseLong(requireNext(args, ++i, arg));
                 case "--help", "-h" -> {
                     printHelp();
@@ -90,6 +95,7 @@ public final class MazeConfig {
                 hallwayWidth,
                 algorithm,
                 output,
+                graphOutput,
                 seed);
     }
 
@@ -123,6 +129,7 @@ public final class MazeConfig {
                 "  --hallway-width <int>    Hallway width in tiles (default 1)\n" +
                 "  --algorithm <name>       Algorithm (default rooms_and_corridors)\n" +
                 "  --output <path>          Output PNG path (default maze.png)\n" +
+                "  --graph-output <path>    Optional Graphviz DOT path for room connections\n" +
                 "  --seed <long>            Optional RNG seed\n" +
                 "  --help                   Show this help");
     }

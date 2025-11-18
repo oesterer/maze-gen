@@ -8,6 +8,7 @@ from .algorithms import ALGORITHMS, MazeGenerator
 from .config import MazeConfig
 from .renderer import render_png
 from .stats import count_coverage
+from .graph import build_room_mst, write_graphviz
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -32,6 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Maze generation algorithm",
     )
     parser.add_argument("--output", default="maze.png", help="Output image path (PNG format)")
+    parser.add_argument("--graph-output", default=None, help="Optional Graphviz DOT output path for room connections")
     parser.add_argument("--seed", type=int, default=None, help="Optional random seed for reproducible mazes")
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     return parser
@@ -54,11 +56,17 @@ def main(argv: list[str] | None = None) -> None:
     grid, rooms = generator.generate(config)
     render_png(grid, config.output_path)
 
+    if args.graph_output:
+        edges = build_room_mst(rooms)
+        write_graphviz(rooms, edges, args.graph_output)
+
     filled_cells, coverage = count_coverage(grid)
     print(
         f"Generated {len(rooms)} rooms with algorithm '{config.algorithm}'. "
         f"Coverage: {coverage:.1%} ({filled_cells}/{config.area} tiles). Output: {config.output_path}"
     )
+    if args.graph_output:
+        print(f"Graphviz DOT written to: {args.graph_output}")
 
 
 if __name__ == "__main__":

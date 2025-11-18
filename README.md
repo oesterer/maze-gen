@@ -43,10 +43,20 @@ mvn -f java/pom.xml exec:java -Dexec.args="\
   --hallway-width 1 \
   --algorithm rooms_and_corridors \
   --output maze.png \
+  [--graph-output rooms.dot] \
   [--seed 1234]" 
 ```
 
 Flags mirror the Python CLI. The output is the same PNG color scheme (light gray empty, medium gray rooms, very dark hallways).
+
+To visualize room connectivity, generate a Graphviz DOT alongside the image (Python CLI):
+
+```bash
+python3 -m maze_gen.cli --width 50 --height 50 --output maze.png --graph-output rooms.dot
+dot -Tpng rooms.dot -o rooms_graph.png
+```
+
+You can do the same with the Java CLI by adding `--graph-output rooms.dot` to the Maven `exec:java` args.
 
 ## Default algorithm: rooms_and_corridors
 The bundled algorithm follows a simple rooms-and-corridors approach to ensure all rooms connect:

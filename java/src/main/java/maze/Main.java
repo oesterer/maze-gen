@@ -36,6 +36,16 @@ public final class Main {
             System.exit(1);
         }
 
+        if (config.graphOutputPath != null) {
+            try {
+                var edges = GraphUtil.buildRoomMst(result.rooms);
+                GraphUtil.writeGraphviz(result.rooms, edges, config.graphOutputPath);
+                System.out.printf("Graphviz DOT written to: %s%n", config.graphOutputPath);
+            } catch (IOException e) {
+                System.err.println("Failed to write graph DOT: " + e.getMessage());
+            }
+        }
+
         int filled = 0;
         for (Tile[] row : result.grid) {
             for (Tile t : row) {
