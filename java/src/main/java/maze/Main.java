@@ -8,6 +8,7 @@ public final class Main {
     private static final Map<String, MazeGenerator> GENERATORS = new HashMap<>();
     static {
         GENERATORS.put("rooms_and_corridors", new RoomsAndCorridorsGenerator());
+        GENERATORS.put("closest_wall", new ClosestWallConnectorGenerator());
     }
 
     public static void main(String[] args) {

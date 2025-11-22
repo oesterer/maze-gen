@@ -49,6 +49,10 @@ mvn -f java/pom.xml exec:java -Dexec.args="\
 
 Flags mirror the Python CLI. The output is the same PNG color scheme (light gray empty, medium gray rooms, very dark hallways).
 
+Available Java algorithms:
+- `rooms_and_corridors`: Greedy spanning tree between room centers (default).
+- `closest_wall`: Connects the nearest unconnected room by linking closest wall midpoints per step, carving Z-shaped corridors (straight if already aligned).
+
 To visualize room connectivity, generate a Graphviz DOT alongside the image (Python CLI):
 
 ```bash

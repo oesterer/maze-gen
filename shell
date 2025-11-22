@@ -1,0 +1,1 @@
+mvn -f java/pom.xml exec:java -Dexec.args="--width 500 --height 500 --coverage 0.3 --hallway-width 1 --output java_graph.png --graph-output java_rooms.dot --seed 17
